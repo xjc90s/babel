@@ -270,27 +270,24 @@ export default (superClass: typeof Parser) =>
       if (typeParameters) {
         delete node.typeParameters;
         funcNode.typeParameters = typeParameters;
-        funcNode.start = typeParameters.start;
-        funcNode.loc.start = typeParameters.loc.start;
+        this.resetStartLocationFromNode(funcNode, typeParameters);
       }
       if (type === "ClassPrivateMethod") {
         node.computed = false;
       }
-      if (
-        process.env.BABEL_8_BREAKING &&
-        // @ts-expect-error todo(flow->ts) property not defined for all types in union
-        node.abstract &&
-        this.hasPlugin("typescript")
-      ) {
+      if (process.env.BABEL_8_BREAKING && this.hasPlugin("typescript")) {
         if (!funcNode.body) {
           (funcNode as unknown as N.EstreeTSEmptyBodyFunctionExpression).type =
             "TSEmptyBodyFunctionExpression";
         }
-        return this.finishNode(
-          // @ts-expect-error cast methods to estree types
-          node as Undone<N.EstreeTSAbstractMethodDefinition>,
-          "TSAbstractMethodDefinition",
-        );
+        // @ts-expect-error todo(flow->ts) property not defined for all types in union
+        if (node.abstract) {
+          return this.finishNode(
+            // @ts-expect-error cast methods to estree types
+            node as Undone<N.EstreeTSAbstractMethodDefinition>,
+            "TSAbstractMethodDefinition",
+          );
+        }
       }
       return this.finishNode(
         // @ts-expect-error cast methods to estree types

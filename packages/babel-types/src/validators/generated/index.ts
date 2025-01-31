@@ -2287,6 +2287,16 @@ export function isTSMappedType(
 
   return opts == null || shallowEqual(node, opts);
 }
+export function isTSTemplateLiteralType(
+  node: t.Node | null | undefined,
+  opts?: Opts<t.TSTemplateLiteralType> | null,
+): node is t.TSTemplateLiteralType {
+  if (!node) return false;
+
+  if (node.type !== "TSTemplateLiteralType") return false;
+
+  return opts == null || shallowEqual(node, opts);
+}
 export function isTSLiteralType(
   node: t.Node | null | undefined,
   opts?: Opts<t.TSLiteralType> | null,
@@ -3130,6 +3140,7 @@ export function isDeclaration(
     case "TSTypeAliasDeclaration":
     case "TSEnumDeclaration":
     case "TSModuleDeclaration":
+    case "TSImportEqualsDeclaration":
       break;
     case "Placeholder":
       if (node.expectedNode === "Declaration") break;
@@ -3806,6 +3817,7 @@ export function isTypeScript(
     case "TSTypeOperator":
     case "TSIndexedAccessType":
     case "TSMappedType":
+    case "TSTemplateLiteralType":
     case "TSLiteralType":
     case "TSExpressionWithTypeArguments":
     case "TSInterfaceDeclaration":
@@ -3895,6 +3907,7 @@ export function isTSType(
     case "TSTypeOperator":
     case "TSIndexedAccessType":
     case "TSMappedType":
+    case "TSTemplateLiteralType":
     case "TSLiteralType":
     case "TSExpressionWithTypeArguments":
     case "TSImportType":
@@ -3926,6 +3939,7 @@ export function isTSBaseType(
     case "TSUnknownKeyword":
     case "TSVoidKeyword":
     case "TSThisType":
+    case "TSTemplateLiteralType":
     case "TSLiteralType":
       break;
     default:

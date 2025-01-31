@@ -171,6 +171,7 @@ export type Declaration =
   | VariableDeclaration
   | ClassDeclaration
   | FunctionDeclaration
+  | TsImportEqualsDeclaration
   | TsInterfaceDeclaration
   | TsTypeAliasDeclaration
   | TsEnumDeclaration
@@ -1486,7 +1487,7 @@ export interface TsQualifiedName extends NodeBase {
   right: Identifier;
 }
 
-export type TsEntityName = Identifier | TsQualifiedName;
+export type TsEntityName = Identifier | ThisExpression | TsQualifiedName;
 
 export type TsSignatureDeclaration =
   | TsCallSignatureDeclaration
@@ -1598,6 +1599,7 @@ export type TsType =
   | TsIndexedAccessType
   | TsMappedType
   | TsLiteralType // TODO: This probably shouldn't be included here.
+  | TsTemplateLiteralType
   | TsImportType
   | TsTypePredicate;
 
@@ -1754,6 +1756,12 @@ export interface TsMappedType extends TsTypeBase {
   nameType: TsType | undefined | null;
 }
 
+export interface TsTemplateLiteralType extends TsTypeBase {
+  type: "TSTemplateLiteralType";
+  quasis: TemplateElement[];
+  types: TsType[];
+}
+
 export interface TsLiteralType extends TsTypeBase {
   type: "TSLiteralType";
   literal: NumericLiteral | StringLiteral | BooleanLiteral | TemplateLiteral;
@@ -1855,10 +1863,11 @@ export type TsModuleName = TsEntityName | StringLiteral;
 
 export interface TsImportEqualsDeclaration extends NodeBase {
   type: "TSImportEqualsDeclaration";
-  isExport: boolean;
   id: Identifier;
   importKind: "type" | "value";
   moduleReference: TsModuleReference;
+  /** @deprecated */
+  isExport: boolean;
 }
 
 export type TsModuleReference = TsEntityName | TsExternalModuleReference;
@@ -2151,6 +2160,7 @@ export type Node =
   | TsQualifiedName
   | TsRestType
   | TsSatisfiesExpression
+  | TsTemplateLiteralType
   | TsThisType
   | TsTupleType
   | TsTypeAliasDeclaration

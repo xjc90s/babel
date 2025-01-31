@@ -498,6 +498,13 @@ function tokenIfPlusMinus(self: Printer, tok: true | "+" | "-") {
   }
 }
 
+export function TSTemplateLiteralType(
+  this: Printer,
+  node: t.TSTemplateLiteralType,
+) {
+  this._printTemplate(node, node.types);
+}
+
 export function TSLiteralType(this: Printer, node: t.TSLiteralType) {
   this.print(node.literal);
 }
@@ -735,8 +742,12 @@ export function TSImportEqualsDeclaration(
   this: Printer,
   node: t.TSImportEqualsDeclaration,
 ) {
-  const { isExport, id, moduleReference } = node;
-  if (isExport) {
+  const { id, moduleReference } = node;
+  if (
+    !process.env.BABEL_8_BREAKING &&
+    // @ts-ignore(Babel 7 vs Babel 8) Babel 7 AST
+    node.isExport
+  ) {
     this.word("export");
     this.space();
   }

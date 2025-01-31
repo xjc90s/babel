@@ -259,6 +259,7 @@ export type Node =
   | TSSatisfiesExpression
   | TSStringKeyword
   | TSSymbolKeyword
+  | TSTemplateLiteralType
   | TSThisType
   | TSTupleType
   | TSTypeAliasDeclaration
@@ -1942,6 +1943,12 @@ export interface TSMappedType extends BaseNode {
   readonly?: true | false | "+" | "-" | null;
 }
 
+export interface TSTemplateLiteralType extends BaseNode {
+  type: "TSTemplateLiteralType";
+  quasis: Array<TemplateElement>;
+  types: Array<TSType>;
+}
+
 export interface TSLiteralType extends BaseNode {
   type: "TSLiteralType";
   literal:
@@ -2410,7 +2417,8 @@ export type Declaration =
   | TSInterfaceDeclaration
   | TSTypeAliasDeclaration
   | TSEnumDeclaration
-  | TSModuleDeclaration;
+  | TSModuleDeclaration
+  | TSImportEqualsDeclaration;
 export type PatternLike =
   | Identifier
   | RestElement
@@ -2685,6 +2693,7 @@ export type TypeScript =
   | TSTypeOperator
   | TSIndexedAccessType
   | TSMappedType
+  | TSTemplateLiteralType
   | TSLiteralType
   | TSExpressionWithTypeArguments
   | TSInterfaceDeclaration
@@ -2748,6 +2757,7 @@ export type TSType =
   | TSTypeOperator
   | TSIndexedAccessType
   | TSMappedType
+  | TSTemplateLiteralType
   | TSLiteralType
   | TSExpressionWithTypeArguments
   | TSImportType;
@@ -2766,6 +2776,7 @@ export type TSBaseType =
   | TSUnknownKeyword
   | TSVoidKeyword
   | TSThisType
+  | TSTemplateLiteralType
   | TSLiteralType;
 export type ModuleDeclaration =
   | ExportAllDeclaration
@@ -6775,6 +6786,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -6796,6 +6808,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -6885,6 +6898,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -6906,6 +6920,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -6928,6 +6943,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -6950,6 +6966,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7022,6 +7039,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7044,6 +7062,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7056,6 +7075,7 @@ export interface ParentMaps {
   TSImportEqualsDeclaration:
     | BlockStatement
     | DoWhileStatement
+    | ExportNamedDeclaration
     | ForInStatement
     | ForOfStatement
     | ForStatement
@@ -7079,6 +7099,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7102,6 +7123,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7123,6 +7145,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7226,6 +7249,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7247,6 +7271,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7268,6 +7293,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7289,6 +7315,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7343,6 +7370,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7432,6 +7460,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7453,6 +7482,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7474,6 +7504,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7495,6 +7526,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7526,6 +7558,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7555,6 +7588,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7644,6 +7678,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7665,6 +7700,29 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
+    | TSTupleType
+    | TSTypeAliasDeclaration
+    | TSTypeAnnotation
+    | TSTypeAssertion
+    | TSTypeOperator
+    | TSTypeParameter
+    | TSTypeParameterInstantiation
+    | TSUnionType
+    | TemplateLiteral;
+  TSTemplateLiteralType:
+    | TSArrayType
+    | TSAsExpression
+    | TSConditionalType
+    | TSIndexedAccessType
+    | TSIntersectionType
+    | TSMappedType
+    | TSNamedTupleMember
+    | TSOptionalType
+    | TSParenthesizedType
+    | TSRestType
+    | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7686,6 +7744,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7708,6 +7767,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7838,6 +7898,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7859,6 +7920,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7912,6 +7974,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7933,6 +7996,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7954,6 +8018,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7975,6 +8040,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -7996,6 +8062,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -8017,6 +8084,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -8038,6 +8106,7 @@ export interface ParentMaps {
     | TSParenthesizedType
     | TSRestType
     | TSSatisfiesExpression
+    | TSTemplateLiteralType
     | TSTupleType
     | TSTypeAliasDeclaration
     | TSTypeAnnotation
@@ -8113,7 +8182,7 @@ export interface ParentMaps {
     | WhileStatement
     | WithStatement
     | YieldExpression;
-  TemplateElement: TemplateLiteral;
+  TemplateElement: TSTemplateLiteralType | TemplateLiteral;
   TemplateLiteral:
     | ArrayExpression
     | ArrowFunctionExpression

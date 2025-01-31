@@ -1,14 +1,18 @@
+import type * as t from "../index.ts";
 import {
   defineAliasedType,
   arrayOfType,
+  assertEach,
   assertNodeType,
   assertOneOf,
   assertValueType,
+  chain,
   validate,
   validateArrayOfType,
   validateOptional,
   validateOptionalType,
   validateType,
+  type Validator,
 } from "./utils.ts";
 import {
   functionDeclarationCommon,
@@ -385,6 +389,31 @@ defineType("TSMappedType", {
   },
 });
 
+defineType("TSTemplateLiteralType", {
+  aliases: ["TSType", "TSBaseType"],
+  visitor: ["quasis", "types"],
+  fields: {
+    quasis: validateArrayOfType("TemplateElement"),
+    types: {
+      validate: chain(
+        assertValueType("array"),
+        assertEach(assertNodeType("TSType")),
+        function (node: t.TSTemplateLiteralType, key, val) {
+          if (node.quasis.length !== val.length + 1) {
+            throw new TypeError(
+              `Number of ${
+                node.type
+              } quasis should be exactly one more than the number of types.\nExpected ${
+                val.length + 1
+              } quasis but got ${node.quasis.length}`,
+            );
+          }
+        } as Validator,
+      ),
+    },
+  },
+});
+
 defineType("TSLiteralType", {
   aliases: ["TSType", "TSBaseType"],
   visitor: ["literal"],
@@ -628,10 +657,10 @@ defineType("TSImportType", {
 });
 
 defineType("TSImportEqualsDeclaration", {
-  aliases: ["Statement"],
+  aliases: ["Statement", "Declaration"],
   visitor: ["id", "moduleReference"],
   fields: {
-    isExport: validate(bool),
+    ...(process.env.BABEL_8_BREAKING ? {} : { isExport: validate(bool) }),
     id: validateType("Identifier"),
     moduleReference: validateType("TSEntityName", "TSExternalModuleReference"),
     importKind: {

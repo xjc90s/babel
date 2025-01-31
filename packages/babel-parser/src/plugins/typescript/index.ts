@@ -260,6 +260,12 @@ function tsIsVarianceAnnotations(
   return modifier === "in" || modifier === "out";
 }
 
+export const enum tsParseEntityNameFlags {
+  NONE = 0b00,
+  ALLOW_RESERVED_WORDS = 0b01,
+  LEADING_THIS_AS_IDENTIFIER = 0b10,
+}
+
 export default (superClass: ClassWithMixin<typeof Parser, IJSXParserMixin>) =>
   class TypeScriptParserMixin extends superClass implements Parser {
     getScopeHandler(): new (...args: any) => TypeScriptScopeHandler {
@@ -581,7 +587,10 @@ export default (superClass: ClassWithMixin<typeof Parser, IJSXParserMixin>) =>
       if (this.eat(tt.dot)) {
         // In this instance, the entity name will actually itself be a
         // qualifier, so allow it to be a reserved word as well.
-        node.qualifier = this.tsParseEntityName();
+        node.qualifier = this.tsParseEntityName(
+          tsParseEntityNameFlags.ALLOW_RESERVED_WORDS |
+            tsParseEntityNameFlags.LEADING_THIS_AS_IDENTIFIER,
+        );
       }
       if (this.match(tt.lt)) {
         if (process.env.BABEL_8_BREAKING) {
@@ -593,13 +602,31 @@ export default (superClass: ClassWithMixin<typeof Parser, IJSXParserMixin>) =>
       return this.finishNode(node, "TSImportType");
     }
 
-    tsParseEntityName(allowReservedWords: boolean = true): N.TsEntityName {
-      let entity: N.TsEntityName = this.parseIdentifier(allowReservedWords);
+    tsParseEntityName(flags: tsParseEntityNameFlags): N.TsEntityName {
+      let entity: N.TsEntityName;
+      if (
+        flags & tsParseEntityNameFlags.ALLOW_RESERVED_WORDS &&
+        this.match(tt._this)
+      ) {
+        if (flags & tsParseEntityNameFlags.LEADING_THIS_AS_IDENTIFIER) {
+          entity = this.parseIdentifier(true);
+        } else {
+          const node = this.startNode<N.ThisExpression>();
+          this.next();
+          entity = this.finishNode(node, "ThisExpression");
+        }
+      } else {
+        entity = this.parseIdentifier(
+          !!(flags & tsParseEntityNameFlags.ALLOW_RESERVED_WORDS),
+        );
+      }
       while (this.eat(tt.dot)) {
         const node: Undone<N.TsQualifiedName> =
           this.startNodeAtNode<N.TsQualifiedName>(entity);
         node.left = entity;
-        node.right = this.parseIdentifier(allowReservedWords);
+        node.right = this.parseIdentifier(
+          !!(flags & tsParseEntityNameFlags.ALLOW_RESERVED_WORDS),
+        );
         entity = this.finishNode(node, "TSQualifiedName");
       }
       return entity;
@@ -607,7 +634,9 @@ export default (superClass: ClassWithMixin<typeof Parser, IJSXParserMixin>) =>
 
     tsParseTypeReference(): N.TsTypeReference {
       const node = this.startNode<N.TsTypeReference>();
-      node.typeName = this.tsParseEntityName();
+      node.typeName = this.tsParseEntityName(
+        tsParseEntityNameFlags.ALLOW_RESERVED_WORDS,
+      );
       if (!this.hasPrecedingLineBreak() && this.match(tt.lt)) {
         if (process.env.BABEL_8_BREAKING) {
           node.typeArguments = this.tsParseTypeArguments();
@@ -639,7 +668,16 @@ export default (superClass: ClassWithMixin<typeof Parser, IJSXParserMixin>) =>
       if (this.match(tt._import)) {
         node.exprName = this.tsParseImportType();
       } else {
-        node.exprName = this.tsParseEntityName();
+        if (process.env.BABEL_8_BREAKING) {
+          node.exprName = this.tsParseEntityName(
+            tsParseEntityNameFlags.ALLOW_RESERVED_WORDS,
+          );
+        } else {
+          node.exprName = this.tsParseEntityName(
+            tsParseEntityNameFlags.ALLOW_RESERVED_WORDS |
+              tsParseEntityNameFlags.LEADING_THIS_AS_IDENTIFIER,
+          );
+        }
       }
       if (!this.hasPrecedingLineBreak() && this.match(tt.lt)) {
         if (process.env.BABEL_8_BREAKING) {
@@ -1219,10 +1257,35 @@ export default (superClass: ClassWithMixin<typeof Parser, IJSXParserMixin>) =>
       return this.finishNode(node, "TSLiteralType");
     }
 
-    tsParseTemplateLiteralType(): N.TsLiteralType {
-      const node = this.startNode<N.TsLiteralType>();
-      node.literal = super.parseTemplate(false);
-      return this.finishNode(node, "TSLiteralType");
+    tsParseTemplateLiteralType(): N.TsTemplateLiteralType | N.TsLiteralType {
+      if (process.env.BABEL_8_BREAKING) {
+        const startLoc = this.state.startLoc;
+        let curElt = this.parseTemplateElement(false);
+        const quasis = [curElt];
+        if (curElt.tail) {
+          const node = this.startNodeAt<N.TsLiteralType>(startLoc);
+          const literal = this.startNodeAt<N.TemplateLiteral>(startLoc);
+          literal.expressions = [];
+          literal.quasis = quasis;
+          node.literal = this.finishNode(literal, "TemplateLiteral");
+          return this.finishNode(node, "TSLiteralType");
+        } else {
+          const substitutions: N.TsType[] = [];
+          while (!curElt.tail) {
+            substitutions.push(this.tsParseType());
+            this.readTemplateContinuation();
+            quasis.push((curElt = this.parseTemplateElement(false)));
+          }
+          const node = this.startNodeAt<N.TsTemplateLiteralType>(startLoc);
+          node.types = substitutions;
+          node.quasis = quasis;
+          return this.finishNode(node, "TSTemplateLiteralType");
+        }
+      } else {
+        const node = this.startNode<N.TsLiteralType>();
+        node.literal = super.parseTemplate(false);
+        return this.finishNode(node, "TSLiteralType");
+      }
     }
 
     parseTemplateSubstitution(): N.TsType | N.Expression {
@@ -1717,8 +1780,10 @@ export default (superClass: ClassWithMixin<typeof Parser, IJSXParserMixin>) =>
           const node = this.startNode<
             N.TSClassImplements | N.TSInterfaceHeritage
           >();
-          node.expression = this.tsParseEntityName();
           if (process.env.BABEL_8_BREAKING) {
+            node.expression = this.tsParseEntityName(
+              tsParseEntityNameFlags.ALLOW_RESERVED_WORDS,
+            );
             if (this.match(tt.lt)) {
               node.typeArguments = this.tsParseTypeArguments();
             }
@@ -1727,6 +1792,10 @@ export default (superClass: ClassWithMixin<typeof Parser, IJSXParserMixin>) =>
               token === "extends" ? "TSInterfaceHeritage" : "TSClassImplements",
             );
           } else {
+            node.expression = this.tsParseEntityName(
+              tsParseEntityNameFlags.ALLOW_RESERVED_WORDS |
+                tsParseEntityNameFlags.LEADING_THIS_AS_IDENTIFIER,
+            );
             if (this.match(tt.lt)) {
               // @ts-expect-error Babel 7 vs Babel 8
               node.typeParameters = this.tsParseTypeArguments();
@@ -1957,7 +2026,7 @@ export default (superClass: ClassWithMixin<typeof Parser, IJSXParserMixin>) =>
       nested: boolean = false,
     ): N.TsModuleDeclaration {
       node.id = process.env.BABEL_8_BREAKING
-        ? this.tsParseEntityName()
+        ? this.tsParseEntityName(tsParseEntityNameFlags.ALLOW_RESERVED_WORDS)
         : this.parseIdentifier();
 
       if (
@@ -2015,7 +2084,9 @@ export default (superClass: ClassWithMixin<typeof Parser, IJSXParserMixin>) =>
       maybeDefaultIdentifier?: N.Identifier | null,
       isExport?: boolean,
     ): N.TsImportEqualsDeclaration {
-      node.isExport = isExport || false;
+      if (!process.env.BABEL_8_BREAKING) {
+        node.isExport = isExport || false;
+      }
       node.id = maybeDefaultIdentifier || this.parseIdentifier();
       this.checkIdentifier(node.id, BindingFlag.TYPE_TS_VALUE_IMPORT);
       this.expect(tt.eq);
@@ -2041,7 +2112,7 @@ export default (superClass: ClassWithMixin<typeof Parser, IJSXParserMixin>) =>
     tsParseModuleReference(): N.TsModuleReference {
       return this.tsIsExternalModuleReference()
         ? this.tsParseExternalModuleReference()
-        : this.tsParseEntityName(/* allowReservedWords */ false);
+        : this.tsParseEntityName(tsParseEntityNameFlags.NONE);
     }
 
     tsParseExternalModuleReference(): N.TsExternalModuleReference {
@@ -2091,7 +2162,7 @@ export default (superClass: ClassWithMixin<typeof Parser, IJSXParserMixin>) =>
       this.state = state;
     }
 
-    tsTryParseDeclare(nany: any): N.Declaration | undefined {
+    tsTryParseDeclare(nany: any) {
       if (this.isLineTerminator()) {
         return;
       }
@@ -2103,7 +2174,6 @@ export default (superClass: ClassWithMixin<typeof Parser, IJSXParserMixin>) =>
         kind = "let";
       }
 
-      // @ts-expect-error refine typings
       return this.tsInAmbientContext(() => {
         switch (startType) {
           case tt._function:
@@ -2118,7 +2188,7 @@ export default (superClass: ClassWithMixin<typeof Parser, IJSXParserMixin>) =>
             // before parsing the class declaration to know how to register it in the scope.
             nany.declare = true;
             return this.parseClass(
-              nany,
+              nany as Undone<N.ClassDeclaration>,
               /* isStatement */ true,
               /* optionalId */ false,
             );
@@ -2221,7 +2291,7 @@ export default (superClass: ClassWithMixin<typeof Parser, IJSXParserMixin>) =>
       value: string,
       next: boolean,
       decorators: N.Decorator[] | null,
-    ): N.Declaration | undefined | null {
+    ) {
       // no declaration apart from enum can be followed by a line break.
       switch (value) {
         case "abstract":
@@ -2849,8 +2919,10 @@ export default (superClass: ClassWithMixin<typeof Parser, IJSXParserMixin>) =>
     ): N.AnyExport {
       if (this.match(tt._import)) {
         // `export import A = B;`
+        const nodeImportEquals = process.env.BABEL_8_BREAKING
+          ? this.startNode<N.TsImportEqualsDeclaration>()
+          : (node as Undone<N.TsImportEqualsDeclaration>);
         this.next(); // eat `tt._import`
-        const nodeImportEquals = node as Undone<N.TsImportEqualsDeclaration>;
         let maybeDefaultIdentifier: N.Identifier | null = null;
         if (
           this.isContextual(tt._type) &&
@@ -2864,11 +2936,18 @@ export default (superClass: ClassWithMixin<typeof Parser, IJSXParserMixin>) =>
         } else {
           nodeImportEquals.importKind = "value";
         }
-        return this.tsParseImportEqualsDeclaration(
+        const declaration = this.tsParseImportEqualsDeclaration(
           nodeImportEquals,
           maybeDefaultIdentifier,
           /* isExport */ true,
         );
+        if (process.env.BABEL_8_BREAKING) {
+          (node as Undone<N.ExportNamedDeclaration>).declaration = declaration;
+          (node as Undone<N.ExportNamedDeclaration>).specifiers = [];
+          return this.finishNode(node, "ExportNamedDeclaration");
+        } else {
+          return declaration;
+        }
       } else if (this.eat(tt.eq)) {
         // `export = x;`
         const assign = node as Undone<N.TsExportAssignment>;
@@ -3235,7 +3314,7 @@ export default (superClass: ClassWithMixin<typeof Parser, IJSXParserMixin>) =>
         node.exportKind = "type";
       }
 
-      if (isDeclare) {
+      if (isDeclare && declaration.type !== "TSImportEqualsDeclaration") {
         // Reset location to include `declare` in range
         this.resetStartLocation(declaration, startLoc);
 
